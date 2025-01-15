@@ -1,5 +1,6 @@
 import pandas as pd
 import json
+import numpy as np
 
 
 with open('IBM_CASH_FLOW.json') as json_cashflow_data: ### Missing: convert to variables for different stock symbols
@@ -32,3 +33,33 @@ def cash_4_owners(year = int(df_overview['previous_year'].iloc[0])):
         print('{} doesnt look like a good investment with a {} estimated yield return'.format(df_overview["Symbol"], str(yield_return)))
 
 cash_4_owners()
+
+# Net Present Value (NPV) function 
+# risk_free_rate/discounted rate: accounts for the amount the investor could earn without risk (bank returns or government programs)
+# cashflow_growth: how much will the cashflow grow yoy in the next years_projection --- I think this should be calculated based on previous data, as shouldn't be the same for every company 
+def npv(cashflow_growth= .10, year = int(df_overview['previous_year'].iloc[0]), years_projection=10):
+    # get last year cashflow
+    last_year = df_cashflow.loc[df_cashflow['year'] == year]
+    
+    # do a linear interpolation of the cashflow (equal growth for each year)         
+    def interpolate(initial_value, terminal_value, years_projection=10):
+        return np.linspace(initial_value, terminal_value, years_projection)
+    
+    years = range(df_cashflow.index[-1]+1, df_cashflow.index[-1] + years_projection + 1)
+
+    df_proj_cashflow = pd.DataFrame(index=years, columns=df_cashflow.columns)
+
+    # execute linear interpolation
+    df_proj_cashflow["cashflow"] = interpolate(last_year['cash_4_owners'], cashflow_growth, years_projection)
+    
+    # calculate net present value
+    def calculate_present_value(cash_flows, risk_free_rate = .04):
+    # Calculate the present value using: PV = CF / (1 + r)^t + TV/(1 + r)^T
+
+        present_values_cf = [cf / (1 + risk_free_rate) ** t for t, cf in enumerate(cash_flows, start=1)]
+        return present_values_cf
+
+    df_proj_cashflow["cashflow"] = calculate_present_value(df_proj_cashflow["cashflow"].values, WACC)
+
+
+npv()
