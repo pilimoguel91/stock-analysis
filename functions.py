@@ -26,9 +26,9 @@ def cash_4_owners(year = int(df_overview['previous_year'].iloc[0])):
     df_overview['ten_cap'] = (df_cashflow_filter['cash_4_owners'] / df_overview['MarketCapitalization'])
     yield_return = df_overview['ten_cap'].iloc[0]
 # Dummy print for now, we should pass this result to the model later, of course
-    if (df_overview['ten_cap'] > 0.10).all():
-        print(df_overview["Symbol"] + " looks like a good investment with a " + str(df_overview['ten_cap']) + " estimated yield return") 
-    else:
-        print(df_overview["Symbol"] + " doesnt look like a good investment with a " + str(yield_return) + " estimated yield return") 
+    if (df_overview['ten_cap'] >= 0.10).all(): 
+        print('{} looks like a good investment with a {} estimated yield return'.format(df_overview["Symbol"], str(df_overview['ten_cap']))) 
+    else: 
+        print('{} doesnt look like a good investment with a {} estimated yield return'.format(df_overview["Symbol"], str(yield_return)))
 
 cash_4_owners()
