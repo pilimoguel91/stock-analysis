@@ -45,9 +45,11 @@ def npv(cashflow_growth= .10, year = int(df_overview['previous_year'].iloc[0]), 
     def interpolate(initial_value, terminal_value, years_projection=10):
         return np.linspace(initial_value, terminal_value, years_projection)
     
-    years = range(df_cashflow.index[-1]+1, df_cashflow.index[-1] + years_projection + 1)
+    df_cashflow_sort = df_cashflow.sort_values("year", ascending=True)
 
-    df_proj_cashflow = pd.DataFrame(index=years, columns=df_cashflow.columns)
+    years = range(df_cashflow_sort["year"].iloc[-1]+1, df_cashflow_sort["year"].iloc[-1] + years_projection + 1)
+
+    df_proj_cashflow = pd.DataFrame(index=years)
 
     # execute linear interpolation
     df_proj_cashflow["cashflow"] = interpolate(last_year['cash_4_owners'], cashflow_growth, years_projection)
@@ -59,7 +61,8 @@ def npv(cashflow_growth= .10, year = int(df_overview['previous_year'].iloc[0]), 
         present_values_cf = [cf / (1 + risk_free_rate) ** t for t, cf in enumerate(cash_flows, start=1)]
         return present_values_cf
 
-    df_proj_cashflow["cashflow"] = calculate_present_value(df_proj_cashflow["cashflow"].values, WACC)
+    df_proj_cashflow["cashflow"] = calculate_present_value(df_proj_cashflow["cashflow"].values)
+    print(df_proj_cashflow)
 
 
 npv()
