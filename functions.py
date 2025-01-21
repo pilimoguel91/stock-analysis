@@ -51,7 +51,7 @@ print(df_cashflow_sorted)
 def npv(cashflow_growth= 0.0, years_projection=10, df=df_cashflow_sorted):
     # get last year cashflow
     last_year = df.iloc[-1, :]
-    print(last_year)
+    print(last_year['cash_4_owners'])
     
     # do a linear interpolation of the cashflow (equal growth for each year)         
     def interpolate(initial_value, terminal_value, years_projection=10):
@@ -65,9 +65,10 @@ def npv(cashflow_growth= 0.0, years_projection=10, df=df_cashflow_sorted):
 
     # execute linear interpolation
     df_proj_cashflow["cashflow_growth"] = interpolate(initial_value, cashflow_growth, years_projection)
+    df_proj_cashflow["cfg"] = df_proj_cashflow.apply(lambda x: round(x['cashflow_growth'], 1), axis=1)
     print(df_proj_cashflow)
-    df_proj_cashflow["cashflow"] = 1 * (1+round(df_proj_cashflow["cashflow_growth"], 2)).cumprod()
-    #df_proj_cashflow["cashflow"] = last_year["cash_4_owners"] * (1+df_proj_cashflow["cashflow_growth"]).cumprod()
+    # df_proj_cashflow["cashflow"] = 1 * (1 + df_proj_cashflow["cashflow_growth"])
+    df_proj_cashflow["cashflow"] = last_year["cash_4_owners"] * (1+df_proj_cashflow["cashflow_growth"]).cumprod()
     
     # calculate net present value
     def calculate_present_value(cash_flows, risk_free_rate = .04):
@@ -76,7 +77,7 @@ def npv(cashflow_growth= 0.0, years_projection=10, df=df_cashflow_sorted):
         present_values_cf = [cf / (1 + risk_free_rate) ** t for t, cf in enumerate(cash_flows, start=1)]
         return present_values_cf
 
-    df_proj_cashflow["cashflow"] = calculate_present_value(df_proj_cashflow["cashflow"].values)
+    # df_proj_cashflow["cashflow"] = calculate_present_value(df_proj_cashflow["cashflow"].values)
     print(df_proj_cashflow)
 
 
