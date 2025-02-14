@@ -51,7 +51,6 @@ print(df_cashflow_sorted)
 def npv(cashflow_growth= 0.0, years_projection=10, df=df_cashflow_sorted):
     # get last year cashflow
     last_year = df.iloc[-1, :]
-    print(last_year['cash_4_owners'])
     
     # do a linear interpolation of the cashflow (equal growth for each year)         
     def interpolate(initial_value, terminal_value, years_projection=10):
@@ -61,15 +60,13 @@ def npv(cashflow_growth= 0.0, years_projection=10, df=df_cashflow_sorted):
 
     df_proj_cashflow = pd.DataFrame(index=years)
     initial_value = df["cashflow_growth_yoy"].iloc[-1]
-    print(initial_value)
 
     # execute linear interpolation
     df_proj_cashflow["cashflow_growth"] = interpolate(initial_value, cashflow_growth, years_projection)
-    df_proj_cashflow["cfg"] = df_proj_cashflow.apply(lambda x: round(x['cashflow_growth'], 1), axis=1)
-    print(df_proj_cashflow)
+
     # df_proj_cashflow["cashflow"] = 1 * (1 + df_proj_cashflow["cashflow_growth"])
     df_proj_cashflow["cashflow"] = last_year["cash_4_owners"] * (1+df_proj_cashflow["cashflow_growth"]).cumprod()
-    
+
     # calculate net present value
     def calculate_present_value(cash_flows, risk_free_rate = .04):
     # Calculate the present value using: PV = CF / (1 + r)^t + TV/(1 + r)^T
@@ -77,8 +74,18 @@ def npv(cashflow_growth= 0.0, years_projection=10, df=df_cashflow_sorted):
         present_values_cf = [cf / (1 + risk_free_rate) ** t for t, cf in enumerate(cash_flows, start=1)]
         return present_values_cf
 
-    # df_proj_cashflow["cashflow"] = calculate_present_value(df_proj_cashflow["cashflow"].values)
-    print(df_proj_cashflow)
+    df_proj_cashflow["npv"] = calculate_present_value(df_proj_cashflow["cashflow"].values, 0.4)
 
+    return df_proj_cashflow
 
-npv()
+df_proj_cashflow = npv(0.10, 10, df_cashflow_sorted)
+print(df_proj_cashflow)
+
+def buy_price_per_share(npv = df_proj_cashflow["npv"].iloc[-1], num_shares = df_overview['SharesOutstanding'], terminal_growth = 0, expected_rr = .22):
+    # The defined present value of the company needs to be divided by the number of shares, so we get the price per share
+    terminal_value = npv * (1 + terminal_growth) / (expected_rr - terminal_growth)
+    buy_price = terminal_value / num_shares.astype(int)
+    return terminal_value
+# df_proj_cashflow["buy_price"] = buy_price_per_share()
+
+print(buy_price_per_share())
