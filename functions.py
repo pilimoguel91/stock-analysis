@@ -17,6 +17,11 @@ with open('IBM_OVERVIEW.json') as json_overview_data: ### Missing: convert to va
     df_overview['MarketCapitalization'] = pd.to_numeric(df_overview['MarketCapitalization'], errors="coerce")
     LatestQuarter = pd.to_datetime(df_overview['LatestQuarter'])
     df_overview['previous_year'] = (pd.DatetimeIndex(LatestQuarter).year - 1)
+with open('IBM_quote.json') as json_overview_data: ### Missing: convert to variables for different stock symbols
+    data_overview = json.load(json_overview_data)
+    df_quote = pd.DataFrame(data_overview, index=[0])
+    price = pd.to_numeric(df_quote['price'], errors="coerce")
+
 
 # Cashflow function
 def cash_4_owners(year = int(df_overview['previous_year'].iloc[0])):
@@ -31,8 +36,7 @@ def cash_4_owners(year = int(df_overview['previous_year'].iloc[0])):
     df_cashflow_sorted["cashflow_growth_10y_avg"] = df_cashflow_sorted["cashflow_growth_10y"].mean()
     df_cashflow_sorted["cashflow_growth_yoy_avg"] = df_cashflow_sorted["cashflow_growth_yoy"].mean()
 
-
-# 10 cap is a yield return percentage based on the cash available divided by the company total value, above 10 is a good investment
+## Ten Cap: This would be the first analysis based on the company cashflow, if the company has a cap of 10 or more, it is a recommended buy.
     df_overview['ten_cap'] = (df_cashflow_filter['cash_4_owners'] / df_overview['MarketCapitalization'])
     yield_return = df_overview['ten_cap'].iloc[0]
 # Dummy print for now, we should pass this result to the model later, of course
@@ -45,7 +49,9 @@ df_cashflow_sorted = cash_4_owners()
 
 print(df_cashflow_sorted)
 
-# Net Present Value (NPV) function 
+## Calculate the stock value: This would be the second analysis based on company cashflow. If the desired price is equal or greater than the actual price, it is a recommended buy.
+
+# Net Present Value (NPV) function
 # risk_free_rate/discounted rate: accounts for the amount the investor could earn without risk (bank returns or government programs)
 # cashflow_growth: how much will the cashflow grow yoy in the next years_projection --- I think this should be calculated based on previous data, as shouldn't be the same for every company 
 def npv(cashflow_growth= 0.0, years_projection=10, df=df_cashflow_sorted):
@@ -59,7 +65,7 @@ def npv(cashflow_growth= 0.0, years_projection=10, df=df_cashflow_sorted):
     years = range(df["year"].iloc[-1]+1, df["year"].iloc[-1] + years_projection + 1)
 
     df_proj_cashflow = pd.DataFrame(index=years)
-    initial_value = df["cashflow_growth_yoy"].iloc[-1]
+    initial_value = df["cashflow_growth_10y_avg"].iloc[-1]
 
     # execute linear interpolation
     df_proj_cashflow["cashflow_growth"] = interpolate(initial_value, cashflow_growth, years_projection)
@@ -74,18 +80,35 @@ def npv(cashflow_growth= 0.0, years_projection=10, df=df_cashflow_sorted):
         present_values_cf = [cf / (1 + risk_free_rate) ** t for t, cf in enumerate(cash_flows, start=1)]
         return present_values_cf
 
-    df_proj_cashflow["npv"] = calculate_present_value(df_proj_cashflow["cashflow"].values, 0.4)
+    df_proj_cashflow["npv"] = calculate_present_value(df_proj_cashflow["cashflow"].values, 0.04)
 
     return df_proj_cashflow
 
 df_proj_cashflow = npv(0.10, 10, df_cashflow_sorted)
 print(df_proj_cashflow)
 
+# Calculate the desired price per share based on the NPV and the number of shares
 def buy_price_per_share(npv = df_proj_cashflow["npv"].iloc[-1], num_shares = df_overview['SharesOutstanding'], terminal_growth = 0, expected_rr = .22):
     # The defined present value of the company needs to be divided by the number of shares, so we get the price per share
     terminal_value = npv * (1 + terminal_growth) / (expected_rr - terminal_growth)
-    buy_price = terminal_value / num_shares.astype(int)
-    return terminal_value
-# df_proj_cashflow["buy_price"] = buy_price_per_share()
+    desired_buy_price = terminal_value / num_shares.astype(int)
+    return desired_buy_price.astype(float)
 
-print(buy_price_per_share())
+desired_buy_price = buy_price_per_share()
+
+# Compare the desired price per share to the actual price per share
+def compare_buy_price_actual_price(buy_price = desired_buy_price, actual_price = price):
+    if (buy_price >= actual_price).item():
+        print("Desired price is {} and actual price is {} Stock value is good, recommend buying".format(str(buy_price), str(actual_price)))
+    elif (actual_price >= buy_price * 2).item():
+        print("Desired price is {} and actual price is {} Price is more than twice as expensive as stock value, don't recommend buying".format(str(buy_price),
+                                                                                                        str(actual_price)))
+    else:
+        print(
+            "Desired price is {} and actual price is {} Price is more expensive than stock value, but still acceptable".format(
+                str(buy_price),
+                str(actual_price)))
+
+recommendation = compare_buy_price_actual_price()
+
+### Instead of prints we need to assing a variable with the recommendation, so we can run it for multiple stocks to make analysis that will help us build the model. We would have another 7 metrics (9 in total) so we can define the model based on the best combo.
