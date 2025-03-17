@@ -99,10 +99,10 @@ desired_buy_price = buy_price_per_share()
 # Compare the desired price per share to the actual price per share
 def compare_buy_price_actual_price(buy_price = desired_buy_price, actual_price = price):
     if (buy_price >= actual_price).item():
-        print("Desired price is {} and actual price is {} Stock value is good, recommend buying".format(str(buy_price), str(actual_price)))
+        print("Desired price is {} and actual price is {} Stock value is good, recommend buying".format(str(buy_price.item()), str(actual_price.item())))
     elif (actual_price >= buy_price * 2).item():
-        print("Desired price is {} and actual price is {} Price is more than twice as expensive as stock value, don't recommend buying".format(str(buy_price),
-                                                                                                        str(actual_price)))
+        print("Desired price is {} and actual price is {} Price is more than twice as expensive as stock value, don't recommend buying".format(str(buy_price.item()),
+                                                                                                        str(actual_price.item())))
     else:
         print(
             "Desired price is {} and actual price is {} Price is more expensive than stock value, but still acceptable".format(
