@@ -1,0 +1,10 @@
+
+name: dbt_stocks
+version: 1.0
+config-version: 2
+profile: "default"
+
+clean-targets:
+  - "dbt_glue"
+
+macro-paths: ["macros"]
