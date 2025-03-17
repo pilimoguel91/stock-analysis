@@ -10,4 +10,8 @@ def request_data(function_api, symbol, key):
     with open('{symbol}_{function_api}.json'.format( function_api=function_api, symbol=symbol, key=key), 'w') as fp:
         json.dump(data, fp)
 
-request_data("cash-flow-statement", "IBM", "rh8MeZMIpnpD1JcI6zFuPYd0nDGxXr2L")
+
+# Request API Key from https://www.alphavantage.co/support/#api-key
+request_data("quote", "IBM", )
+
+
